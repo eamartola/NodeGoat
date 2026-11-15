@@ -65,3 +65,39 @@ jobs:
           name: sbom-cyclonedx
           path: sbom.cyclonedx.json
           if-no-files-found: error
+
+  sca-dependency-check:
+    name: SCA - OWASP Dependency-Check
+    runs-on: ubuntu-latest
+
+    permissions:
+      contents: read
+
+    steps:
+      - name: Checkout del codigo
+        uses: actions/checkout@v4
+
+      - name: Crear directorio de reportes
+        run: mkdir -p reports
+
+      - name: Ejecutar OWASP Dependency-Check
+        run: |
+          docker run --rm \
+            -v "${{ github.workspace }}:/src:ro" \
+            -v "${{ github.workspace }}/reports:/report" \
+            owasp/dependency-check:latest \
+            --project "NodeGoat" \
+            --scan /src \
+            --out /report \
+            --format HTML \
+            --format JSON \
+            --disableNodeAudit \
+            --failOnCVSS 11
+
+      - name: Subir reportes SCA
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: dependency-check-report
+          path: reports/
+          if-no-files-found: warn
