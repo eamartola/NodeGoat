@@ -89,10 +89,16 @@ jobs:
         run: |
           mkdir -p reports dependency-check-data
           npm ci --ignore-scripts
+
+          echo "Asignando permisos al usuario del contenedor..."
+          sudo chown -R 1000:1000 reports dependency-check-data
+
           echo "Usuario del runner:"
           id
-          echo "Permisos del directorio:"
-          ls -ld reports
+
+          echo "Permisos de los directorios:"
+          ls -ld reports dependency-check-data
+
           echo "Dependencias instaladas:"
           test -d node_modules && echo "node_modules existe"
 
