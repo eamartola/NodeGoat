@@ -77,8 +77,33 @@ jobs:
       - name: Checkout del codigo
         uses: actions/checkout@v4
 
-      - name: Crear directorio de reportes
-        run: mkdir -p reports
+      - name: Restaurar cache de Dependency-Check
+        uses: actions/cache@v4
+        with:
+          path: dependency-check-data
+          key: dependency-check-nvd-${{ runner.os }}-${{ github.run_id }}
+          restore-keys: |
+            dependency-check-nvd-${{ runner.os }}-
+
+      - name: Preparar entorno para Dependency-Check
+        run: |
+          mkdir -p reports dependency-check-data
+          npm ci --ignore-scripts
+          echo "Usuario del runner:"
+          id
+          echo "Permisos del directorio:"
+          ls -ld reports
+          echo "Dependencias instaladas:"
+          test -d node_modules && echo "node_modules existe"
+
+      - name: Validar escritura del contenedor
+        run: |
+          docker run --rm \
+            --entrypoint /bin/sh \
+            -v "${{ github.workspace }}/reports:/report" \
+            -v "${{ github.workspace }}/dependency-check-data:/usr/share/dependency-check/data" \
+            owasp/dependency-check:latest \
+            -c 'set -e; id; touch /report/prueba-permisos.txt /usr/share/dependency-check/data/prueba-permisos.txt; rm /report/prueba-permisos.txt /usr/share/dependency-check/data/prueba-permisos.txt'
 
       - name: Ejecutar OWASP Dependency-Check
         env:
@@ -88,6 +113,7 @@ jobs:
             -e NVD_API_KEY \
             -v "${{ github.workspace }}:/src:ro" \
             -v "${{ github.workspace }}/reports:/report" \
+            -v "${{ github.workspace }}/dependency-check-data:/usr/share/dependency-check/data" \
             owasp/dependency-check:latest \
             --project "NodeGoat" \
             --scan /src \
