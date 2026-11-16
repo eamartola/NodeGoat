@@ -129,7 +129,7 @@ jobs:
             --disableNodeAudit \
             --nvdApiKey "$NVD_API_KEY" \
             --nvdApiDelay 6000 \
-            --failOnCVSS 11
+            --failOnCVSS 7
 
       - name: Subir reportes SCA
         if: always()
